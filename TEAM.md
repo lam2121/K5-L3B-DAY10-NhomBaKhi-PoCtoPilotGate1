@@ -84,25 +84,35 @@ Mỗi thành viên tự viết một mục bên dưới (chép mẫu, đổi ti�
 ### Phần việc phụ trách
 
 - Vai trò: Sản phẩm và kinh doanh (Business).
-- Phụ trách chính: Xác định mục tiêu cấp hệ thống, xây dựng Bản tiêu chí chấp nhận `config/acceptance_criteria.json`, phân tích bản đồ dữ liệu và rủi ro data drift, tính toán chi phí mỗi ticket và chỉ số ROI, xác định phạm vi chạy thử (pilot scope), tham gia pre-mortem và chốt các quyết định Gate 1 (v1, v2).
-- Phiếu phụ trách: Phiếu A (Mục A1 - câu 1.1, Mục A3 - câu 1.5, Mục A4 - câu 1.6), Phiếu B (Mục B3 - câu 2.3, Mục B6 - câu 2.5, Mục B7.4 - câu 2.9, Mục B8), Phiếu C (Mục C5 - câu 3.2, Mục C12).
+- Phụ trách: Phân tích mục tiêu sản phẩm, tiêu chí chấp nhận, rủi ro dữ liệu, chi phí và ROI; tham gia đánh giá Gate 1.
+- Các mục được phân công: Phiếu A (A1, A3, A4), Phiếu B (B3, B6, B7.4, B8), Phiếu C (C5 câu 3.2 và C12). Các phần của Phiếu A và B được nhóm phối hợp hoàn thành.
 
 ### Đóng góp cụ thể
 
-- Soạn thảo mục tiêu cấp hệ thống gắn liền với hiệu quả kinh doanh của LogiX-VN tại Phiếu A mục A1.
-- Phân tích thống kê khoảng tin cậy câu 1.5 và chọn phương án chuẩn xác (b).
-- Thiết lập đầy đủ các ngưỡng an toàn, chất lượng và ngưỡng kinh doanh trong `config/acceptance_criteria.json` (chi phí ≤ 8.000đ, ROI ≥ 0.20, an toàn = 0).
-- Xây dựng quy tắc quyết định (`decision_rule`) cho cả 4 nhánh: Tiếp tục, Thu hẹp, Cải tiến thêm, Dừng.
+- Chuẩn bị bản nháp phân tích bản đồ dữ liệu và rủi ro data drift (B3), cùng các rủi ro kinh doanh trong pre-mortem (B6). Sau khi đồng bộ Git, đối chiếu với nội dung đồng đội đã hoàn thành và không đẩy bản nháp trùng lặp lên repository.
+- Viết specification cho sự cố S2 tại Phiếu C mục C5 (câu 3.2), yêu cầu kiểm tra trách nhiệm thanh toán từ dữ liệu đáng tin cậy, ngăn prompt injection chuyển chi phí giao trễ sang shop qua trường `payer`.
+- Rà soát báo cáo S2 sau khi nhóm sửa cổng: `pass_rate = 1.0`, `pass_k = 1.0`, hoàn sai = 0đ, lỗi hãng oan = 0, `merchant_debit_vnd = 0`, chi phí = 4.740đ/ticket, ROI = 1.11.
+- Hiệu chỉnh ba dòng trong quyết định Gate 1 v2 (Phiếu C mục C12), đối chiếu trực tiếp với tiêu chí đã ký: chi phí ≤ 8.000đ/ticket, ROI ≥ 0.20 và các điều kiện an toàn, chất lượng, vận hành.
+- Phối hợp rà soát quyết định "Tiếp tục" theo bằng chứng của bộ kiểm thử visible, đồng thời ghi nhận rằng bài kiểm tra ẩn chưa có kết quả.
 
 ### Bằng chứng
 
-- Tệp cấu hình `config/acceptance_criteria.json` (hash `1053e7b5...`).
-- Nội dung Phiếu A mục A1 (câu 1.1), mục A3 (câu 1.5), mục A4 (câu 1.6).
+- `templates/form-c-incident.md`, mục C5 câu 3.2 và mục C12.
+- Commit `a18428e` — `Align C12 with signed business thresholds`.
+- `config/acceptance_criteria.json` — các ngưỡng đã ký được sử dụng để đối chiếu.
+- `submission/runs/grade-report.md` — báo cáo S2 `R-S2-grade-20261119-171926-18d17a` (PASS-VISIBLE).
+
+### Sử dụng AI
+
+- Sử dụng ChatGPT để giải thích yêu cầu bài Lab 10, xác định phạm vi công việc của vai trò Business và hỗ trợ các thao tác Git.
+- Sử dụng ChatGPT hỗ trợ soạn thảo và rà soát specification C5, kiểm tra các chỉ số trong báo cáo S2 và hiệu chỉnh lập luận C12.
+- Đối chiếu các nội dung được AI hỗ trợ với thẻ sự cố S2, báo cáo đánh giá và tiêu chí chấp nhận đã ký trước khi đưa vào repository.
+- Không sử dụng AI để sửa trực tiếp các file code xử lý cổng của nhóm.
 
 ### Exit ticket
 
-- Một điều học được: Quyết định Gate 1 không chỉ có "Tiếp tục" hoặc "Dừng", mà "Thu hẹp" phạm vi (pilot scope) là một công cụ kinh doanh cực kỳ mạnh mẽ để giảm thiểu rủi ro mà vẫn thu thập được dữ liệu thực tế.
-- Một điều còn chưa chắc: Cần theo dõi thêm sự biến động của tỷ lệ hoàn tiền khi mùa cao điểm khuyến mãi diễn ra.
+- Một điều học được: Quyết định triển khai AI không thể chỉ dựa vào pass rate. Hệ thống còn phải bảo vệ các bên liên quan, tuân thủ các giới hạn tài chính và đạt hiệu quả kinh doanh theo tiêu chí đã ký.
+- Một điều còn chưa chắc: Kết quả PASS-VISIBLE trên dữ liệu giả lập có duy trì được khi gặp các mẫu prompt injection mới và lưu lượng thực tế hay không; cần xác minh thêm bằng bài kiểm tra ẩn và pilot được giám sát.
 
 ---
 
