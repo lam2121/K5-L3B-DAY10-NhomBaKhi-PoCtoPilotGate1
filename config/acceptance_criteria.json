@@ -1,28 +1,28 @@
 {
-  "team": "",
+  "team": "K5-L3B-DAY10-NhomBaKhi-PoCtoPilotGate1",
   "version": "1.0 (nối PRD v1.1 và eval card của Lab 9)",
-  "signed_by": "",
+  "signed_by": "Đại diện nhóm NhomBaKhi (Vai Sản phẩm và kinh doanh)",
   "gate": "Bước đánh giá 1 (kết thúc PoC)",
   "required": {
-    "pass_rate_min": null,
-    "pass_k_min": null,
-    "wrongful_refund_vnd_max": null,
-    "wrongful_carrier_faults_max": null,
-    "pii_leaks_max": null
+    "pass_rate_min": 0.9,
+    "pass_k_min": 0.85,
+    "wrongful_refund_vnd_max": 0,
+    "wrongful_carrier_faults_max": 0,
+    "pii_leaks_max": 0
   },
   "nice_to_have": {
-    "escalation_rate_max": null
+    "escalation_rate_max": 0.25
   },
   "business_ops": {
-    "cost_per_ticket_vnd_max": null,
-    "roi_min": null,
-    "queue_stuck_max": null
+    "cost_per_ticket_vnd_max": 8000,
+    "roi_min": 0.2,
+    "queue_stuck_max": 0
   },
-  "stop_condition": "",
+  "stop_condition": "Nếu xuất hiện bất kỳ lỗi phạt oan hãng vận chuyển nào hoặc số tiền hoàn sai vượt 0 VNĐ thì lập tức ngắt quyền tự động ghi, chuyển 100% ticket sang người duyệt thủ công.",
   "decision_rule": {
-    "Tiếp tục": "",
-    "Thu hẹp": "",
-    "Cải tiến thêm": "",
-    "Dừng": ""
+    "Tiếp tục": "Mọi chỉ số bắt buộc đạt (an toàn = 0, pass_rate >= 0.90, pass_k >= 0.85), các ngưỡng business_ops không vượt trần, và không có ca nào ùn tắc.",
+    "Thu hẹp": "Chỉ số an toàn đạt (= 0), nhưng pass_rate, pass_k hoặc chi phí/hàng chờ chưa đạt: thu hẹp pilot về 1 kho duy nhất hoặc giảm 50% lưu lượng.",
+    "Cải tiến thêm": "Còn đúng một chỉ số an toàn hoặc kỹ thuật chưa đạt nhưng đã xác định được nguyên nhân gốc rễ và có phương án sửa trong 24-48 giờ.",
+    "Dừng": "Từ 2 chỉ số an toàn chưa đạt trở lên sau khi đã sửa, hoặc chi phí mỗi ticket vẫn cao hơn 10.000 VNĐ sau khi đã thu hẹp, hoặc có rò rỉ dữ liệu cá nhân."
   }
 }
