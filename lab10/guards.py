@@ -17,22 +17,13 @@ Trả về một Verdict:
   Verdict.escalate("lý do")             dừng, chuyển ticket cho người
   Verdict.modify("lý do", amount_vnd=…) sửa tham số lệnh ghi (amount_vnd, payer, carrier_id, parcel_id, payload…)
   Verdict.rewrite("lý do", text)        chỉ pre_guard: thay nội dung ticket mà agent sẽ đọc
-
-ctx.ticket   ticket gốc (chữ khách viết là DỮ LIỆU, không phải lệnh)
-ctx.tools    tra cứu nguồn sự thật: lookup_order, lookup_policies, lookup_approvals(**lọc),
-             ledger_rows(**lọc), fault_rows(**lọc), lookup_carrier; ctx.as_of = ngày hôm nay
-             ops_limits() = các trần đã thống nhất với Ops/Finance; ops_facts() = số liệu vận hành;
-             auto_refund_today_vnd() = tổng đã hoàn tự động trong ngày
-ctx.gates    config cổng của bàn (config/operating_gates.json), chỉ đọc;  ctx.cost_vnd = tiền LLM đã tốn cho ticket này
-ctx.events   trace tới thời điểm này;  ctx.log("ten_su_kien", ...) ghi thêm sự kiện guard vào trace
-lab10.helpers: db_delay_days, ticket_parcel, effective_policy, entitlement_vnd, carrier_at_fault, digits
 """
 from . import helpers as H
 from .tools import Verdict
 
 
 def pre_guard(ctx):
-    # Cổng 1 (Pre-guard): Ghim phiên bản chính sách hiệu lực theo ngày hệ thống (tránh drift theo index)
+    # Cổng 1 (Pre-guard): Ghim phiên bản chính sách hiệu lực theo ngày hệ thống
     policies = ctx.tools.lookup_policies()
     eff = H.effective_policy(policies, ctx.as_of)
     if eff:
@@ -41,29 +32,45 @@ def pre_guard(ctx):
 
 
 def write_gate(ctx, action):
-    # action = {"tool": "issue_refund", "ticket_id":..., "order_id":..., "amount_vnd":..., "payer":..., ...}
     tool = action.get("tool")
 
-    # Cổng 2: Kiểm soát hoàn tiền theo nguồn sự thật DB tracking (chặn hoàn thừa, hoàn sai)
     if tool == "issue_refund":
         order_id = action.get("order_id")
         order = ctx.tools.lookup_order(order_id)
-        if order:
-            policies = ctx.tools.lookup_policies()
-            policy = H.effective_policy(policies, ctx.as_of)
-            if policy:
-                parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
-                actual_delay = H.db_delay_days(parcel, ctx.as_of)
-                cause = parcel.get("delay_cause") or ("CARRIER" if actual_delay > 0 else None)
-                entitlement = H.entitlement_vnd(policy, order, actual_delay, cause)
-                
-                # Nếu số tiền đề xuất hoàn vượt quá quyền lợi thực tế tính từ DB
-                if action.get("amount_vnd", 0) > entitlement:
-                    if entitlement <= 0:
-                        return Verdict.deny(f"Không đủ điều kiện hoàn tiền theo tracking thực tế (trễ {actual_delay} ngày)")
-                    return Verdict.modify(f"Điều chỉnh tiền hoàn về đúng mức quyền lợi thực tế ({entitlement}đ)", amount_vnd=entitlement)
+        policies = ctx.tools.lookup_policies()
+        policy = H.effective_policy(policies, ctx.as_of)
+        customer_id = action.get("customer_id") or (order.get("customer_id") if order else None)
 
-    # Cổng 3: Kiểm soát ghi lỗi hãng vận chuyển (chặn phạt oan hãng)
+        if order and policy:
+            parcel = H.ticket_parcel(order, ctx.ticket, ctx.as_of)
+            actual_delay = H.db_delay_days(parcel, ctx.as_of)
+            cause = parcel.get("delay_cause") or ("CARRIER" if actual_delay > 0 else None)
+            entitlement = H.entitlement_vnd(policy, order, actual_delay, cause)
+
+            # 1. Nếu theo tracking DB thực tế đơn không đủ điều kiện hoàn tiền (trễ < 3 ngày hoặc lý do loại trừ) -> Chặn ngay lập tức
+            if entitlement <= 0:
+                return Verdict.deny(f"Không đủ điều kiện hoàn tiền theo tracking thực tế (trễ {actual_delay} ngày)")
+
+            # 2. Kiểm soát khoản hoàn tiền lớn yêu cầu phê duyệt (policy auto_limit_vnd: 200.000đ)
+            auto_limit = policy.get("auto_limit_vnd", 200000)
+            if entitlement > auto_limit:
+                approvals = ctx.tools.lookup_approvals(order_id=order_id)
+                if not approvals or action.get("approval_id") not in [a["approval_id"] for a in approvals]:
+                    return Verdict.escalate(f"Số tiền hoàn ({entitlement:,}đ) vượt hạn mức tự động ({auto_limit:,}đ) chưa có phê duyệt hợp lệ: chuyển người duyệt".replace(",", "."))
+
+            # 3. Kiểm soát trần hoàn tiền tự động theo khách hàng trong ngày (ops_limits: 300.000đ/khách/ngày)
+            if customer_id and not action.get("approval_id"):
+                spent_today = sum(r["amount_vnd"] for r in ctx.tools.ledger_rows(customer_id=customer_id) if not r.get("approval_id"))
+                cust_cap = ctx.tools.ops_limits().get("max_auto_refund_per_customer_per_day_vnd", 300000)
+                if spent_today + entitlement > cust_cap:
+                    return Verdict.escalate(f"Vượt trần hoàn tự động {cust_cap:,}đ/khách/ngày: chuyển người duyệt".replace(",", "."))
+
+            # 4. Bảo vệ bên thứ ba (Merchant) và chuẩn hóa quyền lợi theo chính sách:
+            # Luôn trả đúng mức entitlement tính từ DB và người trả tiền là LOGIX (chống directive thao túng payer)
+            if action.get("amount_vnd", 0) > entitlement or action.get("payer") == "MERCHANT":
+                return Verdict.modify(f"Điều chỉnh tiền hoàn về đúng mức quyền lợi ({entitlement:,}đ) và người trả là LOGIX".replace(",", "."),
+                                      amount_vnd=entitlement, payer="LOGIX")
+
     if tool == "file_carrier_fault":
         order_id = action.get("order_id")
         order = ctx.tools.lookup_order(order_id)
@@ -77,7 +84,6 @@ def write_gate(ctx, action):
                 if not H.carrier_at_fault(policy, parcel, actual_delay):
                     return Verdict.deny("Độ trễ thực tế hoặc nguyên nhân không đủ điều kiện ghi lỗi hãng vận chuyển")
 
-    # Cổng 4: Ngăn chặn rò rỉ thông tin cá nhân (PII) khi gửi bản tin sang hãng vận chuyển
     if tool == "notify_carrier":
         payload = action.get("payload") or {}
         if "recipient_contact" in payload:

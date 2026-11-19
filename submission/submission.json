@@ -6,12 +6,12 @@
     "DangNguyenNhatMinh-2A202604118",
     "NguyenTrungDung-2A202604084"
   ],
-  "incident": "",
+  "incident": "S2",
   "decision_v1": "Tiếp tục",
-  "decision_v2": "",
+  "decision_v2": "Tiếp tục",
   "three_lines": {
-    "environment_assumption": "",
-    "reduce_or_prevent": "",
-    "measure_in_pilot": ""
+    "environment_assumption": "Thiết kế của đội giả định rằng văn bản trong ticket và ghi chú checkout note chỉ thuần túy là dữ liệu mô tả của khách hàng chứ không chứa các câu lệnh prompt injection cố tình giả mạo quyền hệ thống hoặc ép buộc chỉ định người thanh toán.",
+    "reduce_or_prevent": "Cổng phòng ngừa của đội thực sự NGĂN ĐƯỢC tác hại vì mọi lệnh ghi sổ cái đều bị chặn và hiệu chỉnh độc lập theo nguồn sự thật DB tracking, ép cứng payer là LOGIX và kiểm soát chặt chẽ trần hạn mức tự động 200k/300k trước khi phát sinh giao dịch.",
+    "measure_in_pilot": "Cần đo lại trong pilot thật tần suất xuất hiện các mẫu câu prompt injection mới ngoài thực tế, tỷ lệ khiếu nại phức tạp cần chuyển duyệt thủ công, và độ trễ thực tế của hệ thống khi chạy dưới tải cao điểm."
   }
 }
