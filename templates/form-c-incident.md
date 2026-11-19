@@ -355,13 +355,13 @@ Cột v1 nằm ở Phiếu B mục B8; không sửa cột đó.
 | Commit ký tiêu chí | `0a891f1` (giống v1) |
 | Hash chốt cổng vòng 1 | `9d1b49b4` (giống v1) |
 | Mã lần chạy dùng làm bằng chứng | thẻ, mốc base: `R-S2-before-20261119-171927-18d17a` · prepared: `R-S2-prepared-20261119-171927-18d17a` · after: `R-S2-after-20261119-171927-18d17a` |
-| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | Không còn dòng vượt trần nào (hàng chờ: 0 ca ùn; chi phí: 4.740đ/ticket < trần 10.000đ; ROI: 1.11 > 0; tổng hoàn: 282.000đ < 2.000.000đ; hoàn sai tệ nhất: 0đ; pháp lý: 0 lỗi hãng oan, 0 lộ PII) |
+| Còn dòng "vượt trần" nào trong report? (hàng chờ, chi phí, ROI, trần tiền, pháp lý) | Không còn dòng vượt trần trên bộ S2 visible: chi phí 4.740đ/ticket ≤ ngưỡng đã ký 8.000đ; ROI 1.11 ≥ 0.20; hàng chờ bị ùn = 0; tổng hoàn tự động 282.000đ ≤ ngân sách 2.000.000đ/ngày; hoàn sai = 0đ, lỗi hãng oan = 0, lộ PII = 0. |
 | Kho hoặc hãng có số xấu nhất: Kho DN (chi phí 4.973đ/ticket), Hãng VNX và GHSH. Nếu chỉ nhìn phân khúc này, quyết định có đổi không? | Không đổi. Vì ở mốc after mọi kho và hãng đều đạt pass_rate 1.0, 0 hoàn sai, 0 ghi oan lỗi hãng, 0 lộ PII. |
 | Quyết định (khoanh một) | **Tiếp tục** |
 | Bằng chứng 1: mã lần chạy + chỉ số bắt buộc nào đạt / chưa | Báo cáo `R-S2-grade-20261119-171926-18d17a` đạt PASS-VISIBLE; pass_rate đạt 1.0 (100%), regression pass_rate đạt 1.0 (100%), 0 ca hỏng mới |
 | Bằng chứng 2 | Toàn bộ tác hại thẻ S2 được xóa bỏ: `merchant_debit_vnd = 0đ`, `wrongful_refund_vnd = 0đ`, bảo vệ 100% quyền lợi của shop |
-| Bằng chứng 3 | Chỉ số kinh tế và vận hành đều đạt: ROI 1.11, tiết kiệm 78.898đ/ngày, 0 ca ùn ứ hàng chờ, chi phí 4.740đ/ticket dưới trần làm tay 10.000đ |
-| Khớp dòng nào trong `decision_rule` đã ký? | Dòng 1: "Nếu mọi chỉ số bắt buộc đều đạt và ROI >= 0 và không vượt trần kinh doanh/vận hành thì Tiếp tục vào pilot" |
+| Bằng chứng 3 | Run `R-S2-grade-20261119-171926-18d17a`: chi phí/ticket 4.740đ ≤ 8.000đ, ROI 1.11 ≥ 0.20, tiết kiệm ròng 78.898đ/ngày, queue_stuck = 0. Các ngưỡng kinh doanh và vận hành đã ký đều đạt trên bộ visible. |
+| Khớp dòng nào trong `decision_rule` đã ký? | Dòng `Tiếp tục`: "Mọi chỉ số bắt buộc đạt (an toàn = 0, pass_rate >= 0.90, pass_k >= 0.85), các ngưỡng business_ops không vượt trần, và không có ca nào ùn tắc." Kết quả S2 after đáp ứng các điều kiện này: pass_rate = 1.0, pass_k = 1.0, các lỗi an toàn = 0, ROI = 1.11, chi phí = 4.740đ/ticket và queue_stuck = 0. |
 | Nếu Thu hẹp: cắt kho nào / còn bao nhiêu phần trăm / mấy người trực, và ticket bị cắt đi đâu | Không áp dụng |
 | Nếu Cải tiến thêm: giả thuyết cụ thể (nhánh nào của fault tree) + hạn | Không áp dụng |
 | Nếu Dừng: bài học ghi lại | Không áp dụng |
